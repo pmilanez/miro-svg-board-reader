@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="420" viewBox="0 0 1280 420" role="img" aria-labelledby="title desc">
+  <title id="title">Miro SVG Board Reader</title>
+  <desc id="desc">A Miro-style board flow becoming structured SVG evidence for AI agents.</desc>
+  <rect width="1280" height="420" fill="#F7F7F5"/>
+  <rect x="56" y="56" width="1168" height="308" rx="26" fill="#FFFFFF" stroke="#DAD7CD" stroke-width="2"/>
+
+  <text x="104" y="124" font-family="Arial, sans-serif" font-size="48" font-weight="800" fill="#151515">Miro SVG Board Reader</text>
+  <text x="104" y="164" font-family="Arial, sans-serif" font-size="23" fill="#50504A">SVG-first context extraction for product flows and AI agents.</text>
+
+  <g transform="translate(104 222)">
+    <rect x="0" y="0" width="164" height="72" rx="18" fill="#DEDAFF" stroke="#8F7FEE" stroke-width="4"/>
+    <text x="82" y="44" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#171717">Miro board</text>
+
+    <path d="M184 36 L272 36" fill="none" stroke="#202020" stroke-width="3" marker-end="url(#arrow)"/>
+    <rect x="292" y="0" width="164" height="72" rx="18" fill="#FFF4B8" stroke="#F8CC2E" stroke-width="4"/>
+    <text x="374" y="44" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#171717">SVG export</text>
+
+    <path d="M476 36 L564 36" fill="none" stroke="#202020" stroke-width="3" marker-end="url(#arrow)"/>
+    <rect x="584" y="-26" width="154" height="48" rx="14" fill="#E7E7E7" stroke="#B0B0B0" stroke-width="3" stroke-dasharray="9 7"/>
+    <text x="661" y="5" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#171717">text nodes</text>
+    <rect x="584" y="50" width="154" height="48" rx="14" fill="#E7E7E7" stroke="#B0B0B0" stroke-width="3" stroke-dasharray="9 7"/>
+    <text x="661" y="81" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#171717">paths</text>
+
+    <path d="M758 0 L834 28" fill="none" stroke="#202020" stroke-width="3" marker-end="url(#arrow)"/>
+    <path d="M758 74 L834 46" fill="none" stroke="#202020" stroke-width="3" marker-end="url(#arrow)"/>
+    <rect x="856" y="0" width="196" height="72" rx="18" fill="#F8D3AF" stroke="#FE9F4D" stroke-width="4"/>
+    <text x="954" y="31" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#171717">agent-ready</text>
+    <text x="954" y="56" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#171717">flow evidence</text>
+  </g>
+
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#202020"/>
+    </marker>
+  </defs>
+</svg>
