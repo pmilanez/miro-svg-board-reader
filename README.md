@@ -25,8 +25,8 @@ The output is evidence, not magic. Miro exports a visual drawing, not a guarante
 git clone https://github.com/pmilanez/miro-svg-board-reader.git
 cd miro-svg-board-reader
 
-python3 scripts/extract_miro_svg.py "path/to/board.svg" --format markdown
-python3 scripts/extract_miro_svg.py "path/to/board.svg" --format json
+python3 skills/miro-svg-board-reading/scripts/extract_miro_svg.py "path/to/board.svg" --format markdown
+python3 skills/miro-svg-board-reading/scripts/extract_miro_svg.py "path/to/board.svg" --format json
 ```
 
 Run tests:
@@ -37,15 +37,26 @@ python3 -m unittest discover -s tests
 
 No third-party Python packages are required.
 
-## Install the skill in Codex
+## Install with the Skills CLI
 
 ```bash
-mkdir -p ~/.codex/skills/miro-svg-board-reading/scripts
-cp skill/SKILL.md ~/.codex/skills/miro-svg-board-reading/SKILL.md
-cp scripts/extract_miro_svg.py ~/.codex/skills/miro-svg-board-reading/scripts/extract_miro_svg.py
+npx skills add pmilanez/miro-svg-board-reader --list
+npx skills add pmilanez/miro-svg-board-reader --skill miro-svg-board-reading
 ```
 
-Start a new Codex session so the skill inventory can reload.
+For a global Codex install:
+
+```bash
+npx skills add pmilanez/miro-svg-board-reader --skill miro-svg-board-reading -g -a codex -y
+```
+
+The skill is packaged in `skills/miro-svg-board-reading/`, so `npx skills` installs the instructions and the helper script together. Start a new Codex session so the skill inventory can reload.
+
+Update later:
+
+```bash
+npx skills update miro-svg-board-reading -g
+```
 
 ## Recommended Miro export flow
 
