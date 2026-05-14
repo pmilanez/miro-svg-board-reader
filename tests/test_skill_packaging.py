@@ -16,6 +16,7 @@ class SkillPackagingTests(unittest.TestCase):
 
         self.assertIn("npx skills add pmilanez/miro-svg-board-reader", readme)
         self.assertIn("--skill miro-svg-board-reading", readme)
+        self.assertIn("--dossier-dir .miro/svg-specs", readme)
 
 
 if __name__ == "__main__":

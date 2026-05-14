@@ -7,7 +7,7 @@ description: Use when asked to understand, summarize, audit, or document a Miro 
 
 ## Overview
 
-Use exported SVG as the primary source when it contains real `<text>` and vector `<path>` elements. Reconstruct product meaning from labels, coordinates, arrows, branches, states, colors, lanes, and grouping.
+Use exported SVG as the primary source when it contains real `<text>` and vector `<path>` elements. Reconstruct product meaning from labels, coordinates, arrows, branches, states, colors, lanes, and grouping. For maximum context, generate a Board Dossier before making product or architecture claims.
 
 Source priority: SVG first, JPG second, live Miro/MCP optional.
 
@@ -32,22 +32,31 @@ python3 scripts/extract_miro_svg.py "board.svg" --format markdown
 
 When this skill is installed with the Skills CLI, resolve `scripts/extract_miro_svg.py` relative to this `SKILL.md` directory.
 
-3. Cross-check visually with the JPG/SVG image:
+3. For deep analysis or agent handoff, generate a Board Dossier:
+
+```bash
+python3 scripts/extract_miro_svg.py "board.svg" --dossier-dir .miro/svg-specs
+```
+
+Read `.miro/svg-specs/<board-slug>/board-dossier.md` first, then inspect `raw-nodes.json`, `raw-edges.json`, `visual-map.md`, `domain-model.md`, and `decisions-and-ambiguities.md`.
+
+4. Cross-check visually with the JPG/SVG image:
 
 - arrows and branch direction
 - dense areas and tiny status pills
 - colors, lanes, grouping, repeated labels
 - text embedded as raster images
 
-4. Reconstruct the flow:
+5. Reconstruct the flow:
 
 - read left-to-right and top-to-bottom unless arrows prove otherwise
 - identify entry points, actions, decisions, outcomes, terminal states
 - separate system steps from user-facing screens
 - group statuses by lane/provider/channel
 - mark inferred edges as inferred when connector confidence is not obvious
+- separate observed board labels from product meaning inferred by the agent
 
-5. Answer with this contract:
+6. Answer with this contract:
 
 - what the board represents
 - main flow in order
@@ -55,6 +64,25 @@ When this skill is installed with the Skills CLI, resolve `scripts/extract_miro_
 - statuses/entities/tables involved
 - visible inconsistencies or likely copy-paste errors
 - confidence level and what remains ambiguous
+
+## Board Dossier Contract
+
+Use dossier mode when another agent needs durable context or when the board is being used for product, architecture, implementation, or review work.
+
+Generated files:
+
+| File | Purpose |
+|---|---|
+| `index.json` | Source, stats, confidence signals, generated files |
+| `raw-nodes.json` | Extracted text nodes and coordinates |
+| `raw-edges.json` | Connector candidates and inferred edges |
+| `board-dossier.md` | Complete human-readable board overview |
+| `visual-map.md` | Spatial organization and reading order |
+| `narrative.md` | Inferred flow scaffold |
+| `domain-model.md` | Generic status/entity/action/decision signals |
+| `decisions-and-ambiguities.md` | Warnings, repeated labels, uncertain edges, disconnected nodes |
+| `agent-handoff.md` | Instructions for downstream agents |
+| `flow.mmd` | Mermaid graph from inferred edges |
 
 ## Quick Reference
 
