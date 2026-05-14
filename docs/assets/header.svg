@@ -1,36 +1,74 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="420" viewBox="0 0 1280 420" role="img" aria-labelledby="title desc">
-  <title id="title">Miro SVG Board Reader</title>
-  <desc id="desc">A Miro-style board flow becoming structured SVG evidence for AI agents.</desc>
-  <rect width="1280" height="420" fill="#F7F7F5"/>
-  <rect x="56" y="56" width="1168" height="308" rx="26" fill="#FFFFFF" stroke="#DAD7CD" stroke-width="2"/>
-
-  <text x="104" y="124" font-family="Arial, sans-serif" font-size="48" font-weight="800" fill="#151515">Miro SVG Board Reader</text>
-  <text x="104" y="164" font-family="Arial, sans-serif" font-size="23" fill="#50504A">SVG-first context extraction for product flows and AI agents.</text>
-
-  <g transform="translate(104 222)">
-    <rect x="0" y="0" width="164" height="72" rx="18" fill="#DEDAFF" stroke="#8F7FEE" stroke-width="4"/>
-    <text x="82" y="44" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#171717">Miro board</text>
-
-    <path d="M184 36 L272 36" fill="none" stroke="#202020" stroke-width="3" marker-end="url(#arrow)"/>
-    <rect x="292" y="0" width="164" height="72" rx="18" fill="#FFF4B8" stroke="#F8CC2E" stroke-width="4"/>
-    <text x="374" y="44" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#171717">SVG export</text>
-
-    <path d="M476 36 L564 36" fill="none" stroke="#202020" stroke-width="3" marker-end="url(#arrow)"/>
-    <rect x="584" y="-26" width="154" height="48" rx="14" fill="#E7E7E7" stroke="#B0B0B0" stroke-width="3" stroke-dasharray="9 7"/>
-    <text x="661" y="5" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#171717">text nodes</text>
-    <rect x="584" y="50" width="154" height="48" rx="14" fill="#E7E7E7" stroke="#B0B0B0" stroke-width="3" stroke-dasharray="9 7"/>
-    <text x="661" y="81" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#171717">paths</text>
-
-    <path d="M758 0 L834 28" fill="none" stroke="#202020" stroke-width="3" marker-end="url(#arrow)"/>
-    <path d="M758 74 L834 46" fill="none" stroke="#202020" stroke-width="3" marker-end="url(#arrow)"/>
-    <rect x="856" y="0" width="196" height="72" rx="18" fill="#F8D3AF" stroke="#FE9F4D" stroke-width="4"/>
-    <text x="954" y="31" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#171717">agent-ready</text>
-    <text x="954" y="56" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#171717">flow evidence</text>
-  </g>
-
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="520" viewBox="0 0 1280 520" role="img" aria-labelledby="title desc">
+  <title id="title">Miro Board Dossier</title>
+  <desc id="desc">A messy Miro board becomes a clear dossier for AI agents.</desc>
   <defs>
-    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="strokeWidth">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#202020"/>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#FFF8E8"/>
+      <stop offset="0.55" stop-color="#F4F8FF"/>
+      <stop offset="1" stop-color="#F7F2FF"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#1D1D1F" flood-opacity="0.14"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="11" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 12 6 L 0 12 z" fill="#232323"/>
     </marker>
   </defs>
+
+  <rect width="1280" height="520" fill="url(#bg)"/>
+  <circle cx="1070" cy="96" r="76" fill="#FFE08A" opacity="0.55"/>
+  <circle cx="163" cy="435" r="92" fill="#BEE8FF" opacity="0.45"/>
+
+  <g filter="url(#shadow)">
+    <rect x="56" y="52" width="1168" height="416" rx="34" fill="#FFFFFF"/>
+  </g>
+
+  <text x="104" y="126" font-family="Inter, Arial, sans-serif" font-size="58" font-weight="850" fill="#161616">Miro Board Dossier</text>
+  <text x="106" y="172" font-family="Inter, Arial, sans-serif" font-size="25" fill="#555555">From whiteboard chaos to agent-ready context.</text>
+
+  <g transform="translate(92 232)">
+    <rect x="0" y="0" width="288" height="166" rx="22" fill="#F9FAFB" stroke="#D7DCE2" stroke-width="2"/>
+    <text x="24" y="34" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="800" fill="#333333">Miro board</text>
+    <rect x="24" y="55" width="84" height="44" rx="10" fill="#FFE785" stroke="#E4BD24" stroke-width="2"/>
+    <rect x="146" y="46" width="100" height="44" rx="10" fill="#D9CEFF" stroke="#8D7CF6" stroke-width="2"/>
+    <rect x="82" y="112" width="112" height="38" rx="10" fill="#BDEFD1" stroke="#55B879" stroke-width="2"/>
+    <path d="M108 77 L146 68" fill="none" stroke="#2B2B2B" stroke-width="2.4" marker-end="url(#arrow)"/>
+    <path d="M194 90 L158 112" fill="none" stroke="#2B2B2B" stroke-width="2.4" marker-end="url(#arrow)"/>
+    <path d="M24 132 C42 112 52 112 82 130" fill="none" stroke="#2B2B2B" stroke-width="2.2" stroke-dasharray="6 6"/>
+  </g>
+
+  <path d="M404 315 L493 315" fill="none" stroke="#232323" stroke-width="4" marker-end="url(#arrow)"/>
+
+  <g transform="translate(520 214)" filter="url(#shadow)">
+    <rect x="0" y="0" width="260" height="210" rx="18" fill="#FFFFFF" stroke="#D8D8D8" stroke-width="2"/>
+    <rect x="0" y="0" width="260" height="50" rx="18" fill="#222222"/>
+    <text x="24" y="32" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF">Board Dossier</text>
+    <line x1="28" y1="78" x2="210" y2="78" stroke="#B7BEC8" stroke-width="4" stroke-linecap="round"/>
+    <line x1="28" y1="108" x2="188" y2="108" stroke="#B7BEC8" stroke-width="4" stroke-linecap="round"/>
+    <line x1="28" y1="138" x2="218" y2="138" stroke="#B7BEC8" stroke-width="4" stroke-linecap="round"/>
+    <rect x="28" y="164" width="92" height="24" rx="12" fill="#E9F7EF"/>
+    <rect x="132" y="164" width="76" height="24" rx="12" fill="#EEF0FF"/>
+  </g>
+
+  <path d="M806 315 L895 315" fill="none" stroke="#232323" stroke-width="4" marker-end="url(#arrow)"/>
+
+  <g transform="translate(924 230)">
+    <rect x="0" y="0" width="242" height="172" rx="24" fill="#F8FBFF" stroke="#C8D8F0" stroke-width="2"/>
+    <text x="28" y="40" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="850" fill="#222222">AI agent starts with</text>
+    <g transform="translate(28 66)">
+      <circle cx="10" cy="10" r="10" fill="#5CC58A"/>
+      <path d="M5 10 L9 14 L16 6" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="30" y="16" font-family="Inter, Arial, sans-serif" font-size="17" fill="#333333">clear flow</text>
+    </g>
+    <g transform="translate(28 104)">
+      <circle cx="10" cy="10" r="10" fill="#5CC58A"/>
+      <path d="M5 10 L9 14 L16 6" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="30" y="16" font-family="Inter, Arial, sans-serif" font-size="17" fill="#333333">known ambiguity</text>
+    </g>
+    <g transform="translate(28 142)">
+      <circle cx="10" cy="10" r="10" fill="#5CC58A"/>
+      <path d="M5 10 L9 14 L16 6" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="30" y="16" font-family="Inter, Arial, sans-serif" font-size="17" fill="#333333">ready handoff</text>
+    </g>
+  </g>
 </svg>
