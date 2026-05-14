@@ -15,6 +15,7 @@ Miro boards are great for product flows, journey maps, and decision diagrams, bu
 - detects simple connector paths
 - infers likely edges between nearby nodes
 - warns when embedded raster images may hide unreadable text
+- writes a reusable Board Dossier for downstream agents
 - includes a Codex/Agent skill that teaches the workflow: SVG first, JPG second, live Miro/MCP optional
 
 The output is evidence, not magic. Miro exports a visual drawing, not a guaranteed process graph, so final interpretation should still cross-check arrowheads, lanes, colors, and dense areas visually.
@@ -27,6 +28,7 @@ cd miro-svg-board-reader
 
 python3 skills/miro-svg-board-reading/scripts/extract_miro_svg.py "path/to/board.svg" --format markdown
 python3 skills/miro-svg-board-reading/scripts/extract_miro_svg.py "path/to/board.svg" --format json
+python3 skills/miro-svg-board-reading/scripts/extract_miro_svg.py "path/to/board.svg" --dossier-dir .miro/svg-specs
 ```
 
 Run tests:
@@ -62,10 +64,32 @@ npx skills update miro-svg-board-reading -g
 
 1. Export the relevant board area as **SVG / Vector quality**.
 2. Export the same area as JPG or PNG for visual cross-checking.
-3. Ask the agent to use the SVG as the primary source.
-4. Use live Miro/MCP only to confirm item existence, not as the main flow source.
+3. Generate a Board Dossier with `--dossier-dir .miro/svg-specs`.
+4. Ask the agent to use the dossier and SVG as the primary source.
+5. Use live Miro/MCP only to confirm item existence, not as the main flow source.
 
 If you control the Miro board, make important frame titles visible as text widgets before export.
+
+## Board Dossier
+
+For maximum agent context, generate a dossier:
+
+```bash
+python3 skills/miro-svg-board-reading/scripts/extract_miro_svg.py "path/to/board.svg" --dossier-dir .miro/svg-specs
+```
+
+This creates `.miro/svg-specs/<board-slug>/` with:
+
+- `index.json`: source, stats, confidence signals, generated files
+- `raw-nodes.json`: extracted text nodes with coordinates
+- `raw-edges.json`: connector candidates and inferred edges
+- `board-dossier.md`: complete board overview for humans and agents
+- `visual-map.md`: spatial organization and reading order
+- `narrative.md`: inferred flow scaffold
+- `domain-model.md`: status-like, actor/system-like, action/event-like, decision-like labels
+- `decisions-and-ambiguities.md`: warnings, repeated labels, uncertain edges, disconnected nodes
+- `agent-handoff.md`: instructions for downstream agents
+- `flow.mmd`: Mermaid flowchart from inferred edges
 
 ## Example output
 

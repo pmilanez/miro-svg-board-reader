@@ -33,6 +33,78 @@ class ExtractMiroSvgTest(unittest.TestCase):
             )
             return json.loads(result.stdout)
 
+    def test_writes_complete_board_dossier_package(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            svg_path = tmp_path / "Customer Status Flow.svg"
+            dossier_root = tmp_path / "specs"
+            svg_path.write_text(
+                textwrap.dedent(
+                    """
+                    <svg xmlns="http://www.w3.org/2000/svg" width="700" height="240">
+                      <g width="120px" height="40px" transform="translate(10, 30)">
+                        <text x="5" y="24">API creates customer</text>
+                      </g>
+                      <g width="140px" height="40px" transform="translate(220, 30)">
+                        <text x="5" y="24">STATUS: REGISTERED</text>
+                      </g>
+                      <g width="150px" height="40px" transform="translate(450, 30)">
+                        <text x="5" y="24">Decision: offer found?</text>
+                      </g>
+                      <g width="110px" height="0px" transform="translate(130, 50)">
+                        <path stroke="#1a1a1a" d="M 0 0 L 90 0" />
+                      </g>
+                      <g width="110px" height="0px" transform="translate(360, 50)">
+                        <path stroke="#1a1a1a" d="M 0 0 L 90 0" />
+                      </g>
+                    </svg>
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    str(svg_path),
+                    "--format",
+                    "json",
+                    "--dossier-dir",
+                    str(dossier_root),
+                ],
+                check=True,
+                text=True,
+                capture_output=True,
+            )
+
+            data = json.loads(result.stdout)
+            dossier_dir = dossier_root / "customer-status-flow"
+            expected_files = {
+                "index.json",
+                "raw-nodes.json",
+                "raw-edges.json",
+                "board-dossier.md",
+                "visual-map.md",
+                "narrative.md",
+                "domain-model.md",
+                "decisions-and-ambiguities.md",
+                "agent-handoff.md",
+                "flow.mmd",
+            }
+
+            self.assertEqual(data["dossier"], str(dossier_dir))
+            self.assertEqual(expected_files, {path.name for path in dossier_dir.iterdir()})
+            index = json.loads((dossier_dir / "index.json").read_text(encoding="utf-8"))
+            self.assertEqual(index["board"]["slug"], "customer-status-flow")
+            self.assertEqual(index["stats"]["nodes"], 3)
+            dossier = (dossier_dir / "board-dossier.md").read_text(encoding="utf-8")
+            self.assertIn("## Board Identity", dossier)
+            self.assertIn("## Narrative Understanding", dossier)
+            self.assertIn("## Agent Handoff", dossier)
+            self.assertIn("STATUS: REGISTERED", (dossier_dir / "domain-model.md").read_text(encoding="utf-8"))
+            self.assertIn("flowchart LR", (dossier_dir / "flow.mmd").read_text(encoding="utf-8"))
+
     def test_groups_multiline_text_into_nodes_and_infers_arrow_edge(self):
         data = self.run_script(
             """

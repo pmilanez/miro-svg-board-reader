@@ -9,18 +9,33 @@ into evidence an agent can inspect before summarizing the board.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import re
 import sys
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 
 TRANSLATE_RE = re.compile(r"translate\(\s*([-+]?\d*\.?\d+)[,\s]+([-+]?\d*\.?\d+)\s*\)")
 POINT_RE = re.compile(r"[ML]\s*([-+]?\d*\.?\d+)[,\s]+([-+]?\d*\.?\d+)", re.I)
+SLUG_RE = re.compile(r"[^a-z0-9]+")
+ACTION_RE = re.compile(
+    r"\b(api|create|creates|created|cria|criacao|consulta|consult|send|sent|redirect|transition|transicao|"
+    r"handoff|process|processing|analysis|analyze|submit|register|registered|approve|approved|reject|"
+    r"rejected|offer|found|execute|executed)\b",
+    re.I,
+)
+ACTOR_SYSTEM_RE = re.compile(
+    r"\b(api|app|web|whatsapp|service|foundation|customer|client|user|provider|partner|orchestrator|"
+    r"agent|system|modelo|model)\b",
+    re.I,
+)
+STATUS_RE = re.compile(r"\b(status|state|journey|approved|rejected|registered|terminated|abandoned|processing|handoff)\b", re.I)
 
 
 def local_name(tag: str) -> str:
@@ -52,6 +67,23 @@ def normalize_text(text: str) -> str:
     compact = " ".join(text.replace("\xa0", " ").split())
     compact = re.sub(r"\s+:", ":", compact)
     return re.sub(r":(?=[^\s/])", ": ", compact)
+
+
+def slugify(value: str) -> str:
+    slug = SLUG_RE.sub("-", value.lower()).strip("-")
+    return slug or "board"
+
+
+def utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(65536), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 @dataclass
@@ -331,13 +363,383 @@ def render_markdown(data: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def markdown_table_value(value: str) -> str:
+    return value.replace("|", "\\|")
+
+
+def mermaid_label(value: str) -> str:
+    return value.replace('"', "'").replace("[", "(").replace("]", ")")
+
+
+def reading_order(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return sorted(nodes, key=lambda node: (node["x"], node["y"], node["id"]))
+
+
+def board_bounds(nodes: list[dict[str, Any]]) -> dict[str, float]:
+    if not nodes:
+        return {"min_x": 0.0, "min_y": 0.0, "max_x": 0.0, "max_y": 0.0, "width": 0.0, "height": 0.0}
+    min_x = min(node["x"] for node in nodes)
+    min_y = min(node["y"] for node in nodes)
+    max_x = max(node["x"] + node["width"] for node in nodes)
+    max_y = max(node["y"] + node["height"] for node in nodes)
+    return {
+        "min_x": round(min_x, 2),
+        "min_y": round(min_y, 2),
+        "max_x": round(max_x, 2),
+        "max_y": round(max_y, 2),
+        "width": round(max_x - min_x, 2),
+        "height": round(max_y - min_y, 2),
+    }
+
+
+def layout_summary(nodes: list[dict[str, Any]]) -> dict[str, Any]:
+    bounds = board_bounds(nodes)
+    orientation = "left-to-right" if bounds["width"] >= bounds["height"] else "top-to-bottom"
+    return {
+        "bounds": bounds,
+        "primary_orientation": orientation,
+        "reading_order_ids": [node["id"] for node in reading_order(nodes)],
+    }
+
+
+def label_counts(nodes: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for node in nodes:
+        counts[node["label"]] = counts.get(node["label"], 0) + 1
+    return counts
+
+
+def repeated_labels(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    counts = label_counts(nodes)
+    repeated: list[dict[str, Any]] = []
+    for label, count in sorted(counts.items(), key=lambda item: (-item[1], item[0])):
+        if count <= 1:
+            continue
+        repeated.append(
+            {
+                "label": label,
+                "count": count,
+                "node_ids": [node["id"] for node in nodes if node["label"] == label],
+            }
+        )
+    return repeated
+
+
+def concept_tokens(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    counts: dict[str, int] = {}
+    for node in nodes:
+        for token in re.findall(r"\w{3,}", node["label"]):
+            key = token.lower()
+            counts[key] = counts.get(key, 0) + 1
+    return [
+        {"token": token, "count": count}
+        for token, count in sorted(counts.items(), key=lambda item: (-item[1], item[0]))[:30]
+    ]
+
+
+def select_labels(nodes: list[dict[str, Any]], pattern: re.Pattern[str]) -> list[dict[str, str]]:
+    return [
+        {"id": node["id"], "label": node["label"]}
+        for node in nodes
+        if pattern.search(node["label"])
+    ]
+
+
+def domain_model(data: dict[str, Any]) -> dict[str, Any]:
+    nodes = data["nodes"]
+    return {
+        "status_like_labels": select_labels(nodes, STATUS_RE),
+        "actor_or_system_like_labels": select_labels(nodes, ACTOR_SYSTEM_RE),
+        "action_or_event_like_labels": select_labels(nodes, ACTION_RE),
+        "decision_like_labels": [
+            {"id": node["id"], "label": node["label"]}
+            for node in nodes
+            if "?" in node["label"] or re.search(r"\b(decision|if|whether|found|approved|rejected)\b", node["label"], re.I)
+        ],
+        "repeated_labels": repeated_labels(nodes),
+        "common_terms": concept_tokens(nodes),
+    }
+
+
+def disconnected_nodes(data: dict[str, Any]) -> list[dict[str, str]]:
+    connected_ids = {edge["from_id"] for edge in data["edges"]} | {edge["to_id"] for edge in data["edges"]}
+    return [
+        {"id": node["id"], "label": node["label"]}
+        for node in data["nodes"]
+        if node["id"] not in connected_ids
+    ]
+
+
+def ambiguity_report(data: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "warnings": data["warnings"],
+        "medium_confidence_edges": [edge for edge in data["edges"] if edge["confidence"] != "high"],
+        "repeated_labels": repeated_labels(data["nodes"]),
+        "disconnected_nodes": disconnected_nodes(data),
+        "notes": [
+            "Connector direction is inferred from SVG path start/end points; visually confirm arrowheads before implementation.",
+            "Colors and spatial groups are semantic signals, not proof of behavior by themselves.",
+            "Treat generated narrative as a scaffold until checked against the rendered board.",
+        ],
+    }
+
+
+def render_flow_mermaid(data: dict[str, Any]) -> str:
+    lines = ["flowchart LR"]
+    for node in data["nodes"]:
+        lines.append(f'  {node["id"]}["{mermaid_label(node["label"])}"]')
+    for edge in data["edges"]:
+        lines.append(f'  {edge["from_id"]} --> {edge["to_id"]}')
+    return "\n".join(lines) + "\n"
+
+
+def render_visual_map(data: dict[str, Any]) -> str:
+    layout = layout_summary(data["nodes"])
+    bounds = layout["bounds"]
+    lines = [
+        "# Visual Map",
+        "",
+        f"- primary_orientation: {layout['primary_orientation']}",
+        f"- bounds: x={bounds['min_x']}..{bounds['max_x']}, y={bounds['min_y']}..{bounds['max_y']}",
+        "",
+        "## Reading Order",
+        "| id | x | y | label |",
+        "|---|---:|---:|---|",
+    ]
+    for node in reading_order(data["nodes"]):
+        lines.append(f"| {node['id']} | {node['x']} | {node['y']} | {markdown_table_value(node['label'])} |")
+    return "\n".join(lines) + "\n"
+
+
+def render_narrative(data: dict[str, Any]) -> str:
+    lines = [
+        "# Narrative Understanding",
+        "",
+        "This is an evidence-based reading scaffold. It lists observed labels and inferred connections so an agent can write the final domain interpretation without losing source context.",
+        "",
+        "## Inferred Flow",
+    ]
+    if data["edges"]:
+        for edge in data["edges"]:
+            lines.append(f"- {edge['from']} -> {edge['to']} ({edge['confidence']} confidence)")
+    else:
+        lines.append("- No connector-based flow was inferred. Use the visual map and rendered board to infer sequence.")
+    lines.extend(["", "## Reading-Order Story"])
+    for index, node in enumerate(reading_order(data["nodes"]), start=1):
+        lines.append(f"{index}. {node['label']}")
+    return "\n".join(lines) + "\n"
+
+
+def render_domain_model(data: dict[str, Any]) -> str:
+    model = domain_model(data)
+    lines = ["# Domain Model", ""]
+    sections = [
+        ("Status-Like Labels", "status_like_labels"),
+        ("Actor/System-Like Labels", "actor_or_system_like_labels"),
+        ("Action/Event-Like Labels", "action_or_event_like_labels"),
+        ("Decision-Like Labels", "decision_like_labels"),
+    ]
+    for title, key in sections:
+        lines.extend([f"## {title}", ""])
+        items = model[key]
+        if items:
+            for item in items:
+                lines.append(f"- {item['id']}: {item['label']}")
+        else:
+            lines.append("- None detected by generic label heuristics.")
+        lines.append("")
+    lines.extend(["## Repeated Labels", ""])
+    if model["repeated_labels"]:
+        for item in model["repeated_labels"]:
+            lines.append(f"- {item['label']}: {item['count']} occurrences ({', '.join(item['node_ids'])})")
+    else:
+        lines.append("- None.")
+    lines.extend(["", "## Common Terms", ""])
+    lines.extend(f"- {item['token']}: {item['count']}" for item in model["common_terms"])
+    return "\n".join(lines) + "\n"
+
+
+def render_decisions_and_ambiguities(data: dict[str, Any]) -> str:
+    report = ambiguity_report(data)
+    lines = [
+        "# Decisions and Ambiguities",
+        "",
+        "## What Appears Decided",
+        "",
+        "- Treat labels connected by high-confidence inferred edges as candidate decided flow, pending visual arrowhead confirmation.",
+        "- Treat repeated status or terminal labels as separate states unless position and lane prove they are duplicates.",
+        "",
+        "## Ambiguities and Risks",
+        "",
+    ]
+    for warning in report["warnings"]:
+        lines.append(f"- {warning['code']}: {warning['message']}")
+    for edge in report["medium_confidence_edges"]:
+        lines.append(f"- medium edge: {edge['from']} -> {edge['to']}")
+    for item in report["repeated_labels"]:
+        lines.append(f"- repeated label: {item['label']} appears {item['count']} times")
+    if report["disconnected_nodes"]:
+        lines.append(f"- disconnected nodes: {len(report['disconnected_nodes'])} labels have no inferred connector.")
+    if not lines[-1].startswith("-"):
+        lines.append("- No automatic ambiguities beyond the standard SVG interpretation cautions.")
+    lines.extend(["", "## Standard Cautions", ""])
+    lines.extend(f"- {note}" for note in report["notes"])
+    return "\n".join(lines) + "\n"
+
+
+def render_agent_handoff(data: dict[str, Any]) -> str:
+    lines = [
+        "# Agent Handoff",
+        "",
+        "Use this dossier as board context before planning, coding, reviewing, or writing product/architecture analysis.",
+        "",
+        "## Start Here",
+        "",
+        "1. Read `board-dossier.md` for the complete summary.",
+        "2. Use `raw-nodes.json` and `raw-edges.json` as source evidence.",
+        "3. Use `decisions-and-ambiguities.md` to avoid over-assuming unclear arrows, repeated labels, or raster-hidden content.",
+        "4. If a live Miro MCP source is available, use it only to confirm item existence, frame titles, comments, or metadata not present in SVG.",
+        "",
+        "## Response Contract",
+        "",
+        "- Separate observed board labels from inferred meaning.",
+        "- State the main flow, branches, statuses/entities, and terminal outcomes.",
+        "- Call out inconsistencies, copy/paste-looking errors, and missing context.",
+        "- Before implementation, turn unresolved ambiguities into explicit questions or assumptions.",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def render_board_dossier(data: dict[str, Any]) -> str:
+    source_name = Path(data["source"]).name
+    layout = layout_summary(data["nodes"])
+    model = domain_model(data)
+    report = ambiguity_report(data)
+    lines = [
+        f"# Board Dossier: {source_name}",
+        "",
+        "## Board Identity",
+        "",
+        f"- source: {data['source']}",
+        f"- probable_type: visual flow / board map inferred from SVG labels and connectors",
+        f"- primary_orientation: {layout['primary_orientation']}",
+        f"- nodes: {data['stats']['nodes']}",
+        f"- connectors: {data['stats']['connectors']}",
+        f"- inferred_edges: {data['stats']['inferred_edges']}",
+        f"- warnings: {data['stats']['warnings']}",
+        "",
+        "## Visual Map",
+        "",
+        f"- reading_order: {', '.join(layout['reading_order_ids'])}",
+        "- See `visual-map.md` for coordinates and full reading order.",
+        "",
+        "## Raw Evidence",
+        "",
+        "- See `raw-nodes.json` for all extracted text nodes.",
+        "- See `raw-edges.json` for connector candidates and inferred edges.",
+        "",
+        "## Narrative Understanding",
+        "",
+    ]
+    if data["edges"]:
+        lines.append("The SVG contains inferred connector flow. Review `narrative.md` and `flow.mmd` before turning it into product meaning.")
+        for edge in data["edges"][:10]:
+            lines.append(f"- {edge['from']} -> {edge['to']} ({edge['confidence']})")
+        if len(data["edges"]) > 10:
+            lines.append(f"- ... {len(data['edges']) - 10} more inferred edges in `narrative.md`.")
+    else:
+        lines.append("No connector-based flow was inferred. Use spatial reading order and visual inspection.")
+    lines.extend(
+        [
+            "",
+            "## Domain Model",
+            "",
+            f"- status_like_labels: {len(model['status_like_labels'])}",
+            f"- actor_or_system_like_labels: {len(model['actor_or_system_like_labels'])}",
+            f"- action_or_event_like_labels: {len(model['action_or_event_like_labels'])}",
+            f"- decision_like_labels: {len(model['decision_like_labels'])}",
+            "- See `domain-model.md` for the detailed generic model.",
+            "",
+            "## Decisions and Ambiguities",
+            "",
+            f"- warnings: {len(report['warnings'])}",
+            f"- medium_confidence_edges: {len(report['medium_confidence_edges'])}",
+            f"- repeated_labels: {len(report['repeated_labels'])}",
+            f"- disconnected_nodes: {len(report['disconnected_nodes'])}",
+            "- See `decisions-and-ambiguities.md` before making implementation assumptions.",
+            "",
+            "## Agent Handoff",
+            "",
+            "Use this dossier to brief another agent. The agent should cite observed labels, mark inferred connections, and convert ambiguities into questions before coding.",
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
+def write_json(path: Path, payload: Any) -> None:
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def write_dossier(data: dict[str, Any], dossier_root: Path) -> Path:
+    source = Path(data["source"])
+    slug = slugify(source.stem)
+    dossier_dir = dossier_root / slug
+    dossier_dir.mkdir(parents=True, exist_ok=True)
+
+    raw_edges = {"connectors": data["connectors"], "inferred_edges": data["edges"]}
+    files = [
+        "index.json",
+        "raw-nodes.json",
+        "raw-edges.json",
+        "board-dossier.md",
+        "visual-map.md",
+        "narrative.md",
+        "domain-model.md",
+        "decisions-and-ambiguities.md",
+        "agent-handoff.md",
+        "flow.mmd",
+    ]
+    index = {
+        "board": {
+            "source": str(source),
+            "name": source.name,
+            "slug": slug,
+            "sha256": file_sha256(source),
+        },
+        "generated_at": utc_now(),
+        "stats": data["stats"],
+        "confidence_signals": {
+            "has_text_nodes": bool(data["nodes"]),
+            "has_connectors": bool(data["connectors"]),
+            "has_inferred_edges": bool(data["edges"]),
+            "has_warnings": bool(data["warnings"]),
+        },
+        "files": files,
+    }
+
+    write_json(dossier_dir / "index.json", index)
+    write_json(dossier_dir / "raw-nodes.json", data["nodes"])
+    write_json(dossier_dir / "raw-edges.json", raw_edges)
+    (dossier_dir / "board-dossier.md").write_text(render_board_dossier(data), encoding="utf-8")
+    (dossier_dir / "visual-map.md").write_text(render_visual_map(data), encoding="utf-8")
+    (dossier_dir / "narrative.md").write_text(render_narrative(data), encoding="utf-8")
+    (dossier_dir / "domain-model.md").write_text(render_domain_model(data), encoding="utf-8")
+    (dossier_dir / "decisions-and-ambiguities.md").write_text(render_decisions_and_ambiguities(data), encoding="utf-8")
+    (dossier_dir / "agent-handoff.md").write_text(render_agent_handoff(data), encoding="utf-8")
+    (dossier_dir / "flow.mmd").write_text(render_flow_mermaid(data), encoding="utf-8")
+    return dossier_dir
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description="Extract text nodes and likely edges from a Miro SVG export.")
     parser.add_argument("svg", type=Path, help="Path to a Miro-exported SVG file")
     parser.add_argument("--format", choices=["markdown", "json"], default="markdown")
+    parser.add_argument("--dossier-dir", type=Path, help="Write a reusable Board Dossier under this directory")
     args = parser.parse_args(argv)
 
     data = extract(args.svg)
+    if args.dossier_dir:
+        data["dossier"] = str(write_dossier(data, args.dossier_dir))
     if args.format == "json":
         print(json.dumps(data, indent=2, ensure_ascii=False))
     else:
