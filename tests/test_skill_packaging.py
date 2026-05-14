@@ -3,7 +3,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SKILL_DIR = ROOT / "skills" / "miro-svg-board-reading"
+SKILL_DIR = ROOT / "skills" / "miro-board-dossier"
 
 
 class SkillPackagingTests(unittest.TestCase):
@@ -14,8 +14,8 @@ class SkillPackagingTests(unittest.TestCase):
     def test_readme_documents_npx_skills_install_flow(self) -> None:
         readme = (ROOT / "README.md").read_text()
 
-        self.assertIn("npx skills add pmilanez/miro-svg-board-reader", readme)
-        self.assertIn("--skill miro-svg-board-reading", readme)
+        self.assertIn("npx skills add pmilanez/miro-board-dossier", readme)
+        self.assertIn("--skill miro-board-dossier", readme)
         self.assertIn("--dossier-dir .miro/svg-specs", readme)
 
 

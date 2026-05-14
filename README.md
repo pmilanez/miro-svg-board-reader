@@ -1,34 +1,123 @@
 <p align="center">
-  <img src="docs/assets/header.svg" alt="Miro SVG Board Reader" width="100%">
+  <img src="docs/assets/header.svg" alt="Miro Board Dossier" width="100%">
 </p>
 
-# Miro SVG Board Reader
+# Miro Board Dossier
 
-Turn exported Miro SVG boards into structured evidence that AI agents can actually reason about.
+Turn messy Miro boards into clear, reusable context for AI agents.
 
-Miro boards are great for product flows, journey maps, and decision diagrams, but a live board API or a JPG export often loses the structure that matters: labels, coordinates, arrows, branches, repeated states, and visual grouping. This project uses the SVG export as the primary source because SVG can preserve machine-readable text and vector paths.
+Use this when your product flow, architecture map, journey, backlog, or decision tree lives in Miro and you need Codex, Claude Code, ChatGPT, Claude, or another agent to understand it before doing real work.
 
-## What it does
+Instead of asking an agent to guess from a screenshot, Miro Board Dossier helps it build a structured brief: what the board shows, how the flow is organized, which labels and arrows were found, what looks decided, and what still needs human confirmation.
 
-- extracts text nodes from a Miro-exported SVG
-- groups multi-line labels into board nodes
-- detects simple connector paths
-- infers likely edges between nearby nodes
-- warns when embedded raster images may hide unreadable text
-- writes a reusable Board Dossier for downstream agents
-- includes a Codex/Agent skill that teaches the workflow: SVG first, JPG second, live Miro/MCP optional
+## Who This Is For
 
-The output is evidence, not magic. Miro exports a visual drawing, not a guaranteed process graph, so final interpretation should still cross-check arrowheads, lanes, colors, and dense areas visually.
+- Product and ops people who keep important flows in Miro.
+- Founders and PMs handing product context to coding agents.
+- Engineers who need an agent to understand a board before planning or implementing.
+- Teams that want a reusable board summary instead of repeating the same explanation in every chat.
 
-## Quick start
+## What You Get
+
+The skill creates a **Board Dossier**: a folder of plain-language notes and structured evidence your agent can reuse.
+
+```text
+.miro/svg-specs/<board-name>/
+  board-dossier.md
+  agent-handoff.md
+  visual-map.md
+  narrative.md
+  domain-model.md
+  decisions-and-ambiguities.md
+  raw-nodes.json
+  raw-edges.json
+  flow.mmd
+  index.json
+```
+
+In practice, this gives your agent:
+
+- a readable summary of what the board represents
+- a map of the visual layout and reading order
+- the main flow and branches inferred from arrows
+- status-like, actor-like, action-like, and decision-like labels
+- repeated labels and ambiguous areas called out explicitly
+- a handoff file another agent can read before starting work
+
+## Recommended Workflow
+
+1. Open your Miro board.
+2. Export the relevant area as **SVG**.
+3. Optional but useful: export the same area as PNG or JPG for visual checking.
+4. Ask your agent to use `miro-board-dossier`.
+5. Give the agent the SVG file and ask it to generate the dossier.
+6. Use the dossier as the source of truth for planning, implementation, reviews, or product decisions.
+
+SVG is preferred because it can preserve real text and arrow paths. Screenshots are useful for visual checking, but they are not enough for maximum agent context.
+
+## Install
+
+For Codex:
 
 ```bash
-git clone https://github.com/pmilanez/miro-svg-board-reader.git
-cd miro-svg-board-reader
+npx skills add pmilanez/miro-board-dossier --skill miro-board-dossier -g -a codex --copy -y
+```
 
-python3 skills/miro-svg-board-reading/scripts/extract_miro_svg.py "path/to/board.svg" --format markdown
-python3 skills/miro-svg-board-reading/scripts/extract_miro_svg.py "path/to/board.svg" --format json
-python3 skills/miro-svg-board-reading/scripts/extract_miro_svg.py "path/to/board.svg" --dossier-dir .miro/svg-specs
+To see what the package contains:
+
+```bash
+npx skills add pmilanez/miro-board-dossier --list
+```
+
+To update later:
+
+```bash
+npx skills update miro-board-dossier -g
+```
+
+Start a new agent session after installing so the skill list can reload.
+
+## How To Ask Your Agent
+
+After installing the skill, a good prompt is:
+
+```text
+Use the miro-board-dossier skill.
+
+I exported this Miro board as SVG. Generate a Board Dossier first, then tell me what the board represents, the main flow, the key decisions, the statuses/entities involved, and what is ambiguous.
+```
+
+For a bigger handoff:
+
+```text
+Use the miro-board-dossier skill and treat the generated dossier as context for the next task. Separate observed board labels from your interpretation. Do not implement anything until you explain what the board says and what remains unclear.
+```
+
+## Advanced CLI Usage
+
+Clone the repo:
+
+```bash
+git clone https://github.com/pmilanez/miro-board-dossier.git
+cd miro-board-dossier
+```
+
+Generate a full dossier:
+
+```bash
+python3 skills/miro-board-dossier/scripts/extract_miro_svg.py "path/to/board.svg" --dossier-dir .miro/svg-specs
+```
+
+Print a quick markdown extraction:
+
+```bash
+python3 skills/miro-board-dossier/scripts/extract_miro_svg.py "path/to/board.svg" --format markdown
+```
+
+Print JSON evidence:
+
+```bash
+python3 skills/miro-board-dossier/scripts/extract_miro_svg.py "path/to/board.svg" --format json
 ```
 
 Run tests:
@@ -39,89 +128,30 @@ python3 -m unittest discover -s tests
 
 No third-party Python packages are required.
 
-## Install with the Skills CLI
+## What The Files Mean
 
-```bash
-npx skills add pmilanez/miro-svg-board-reader --list
-npx skills add pmilanez/miro-svg-board-reader --skill miro-svg-board-reading
-```
-
-For a global Codex install:
-
-```bash
-npx skills add pmilanez/miro-svg-board-reader --skill miro-svg-board-reading -g -a codex -y
-```
-
-The skill is packaged in `skills/miro-svg-board-reading/`, so `npx skills` installs the instructions and the helper script together. Start a new Codex session so the skill inventory can reload.
-
-Update later:
-
-```bash
-npx skills update miro-svg-board-reading -g
-```
-
-## Recommended Miro export flow
-
-1. Export the relevant board area as **SVG / Vector quality**.
-2. Export the same area as JPG or PNG for visual cross-checking.
-3. Generate a Board Dossier with `--dossier-dir .miro/svg-specs`.
-4. Ask the agent to use the dossier and SVG as the primary source.
-5. Use live Miro/MCP only to confirm item existence, not as the main flow source.
-
-If you control the Miro board, make important frame titles visible as text widgets before export.
-
-## Board Dossier
-
-For maximum agent context, generate a dossier:
-
-```bash
-python3 skills/miro-svg-board-reading/scripts/extract_miro_svg.py "path/to/board.svg" --dossier-dir .miro/svg-specs
-```
-
-This creates `.miro/svg-specs/<board-slug>/` with:
-
-- `index.json`: source, stats, confidence signals, generated files
-- `raw-nodes.json`: extracted text nodes with coordinates
+- `board-dossier.md`: the main human-readable board brief
+- `agent-handoff.md`: the short context another agent should read first
+- `visual-map.md`: coordinates, layout, and reading order
+- `narrative.md`: flow scaffold from labels and inferred arrows
+- `domain-model.md`: detected statuses, actors, systems, actions, decisions, repeated labels, and common terms
+- `decisions-and-ambiguities.md`: what the agent should not over-assume
+- `raw-nodes.json`: extracted text and positions
 - `raw-edges.json`: connector candidates and inferred edges
-- `board-dossier.md`: complete board overview for humans and agents
-- `visual-map.md`: spatial organization and reading order
-- `narrative.md`: inferred flow scaffold
-- `domain-model.md`: status-like, actor/system-like, action/event-like, decision-like labels
-- `decisions-and-ambiguities.md`: warnings, repeated labels, uncertain edges, disconnected nodes
-- `agent-handoff.md`: instructions for downstream agents
-- `flow.mmd`: Mermaid flowchart from inferred edges
+- `flow.mmd`: Mermaid flowchart for quick visualization
+- `index.json`: source, stats, confidence signals, and generated file list
 
-## Example output
+## What It Does Not Pretend
 
-```text
-# Miro SVG Extraction: board.svg
+Miro exports are visual artifacts, not perfect process schemas. The dossier helps an agent understand much more, but it still marks uncertainty.
 
-- nodes: 48
-- connectors: 40
-- inferred_edges: 39
+- Curved or complex arrows may need visual confirmation.
+- Arrow direction is inferred unless checked visually.
+- Repeated labels need position and lane context.
+- Text inside raster images may stay hidden.
+- Frame titles, comments, and some metadata may need Miro MCP or manual confirmation.
 
-## Nodes
-| id | x | y | label |
-|---|---:|---:|---|
-| n001 | 110.99 | 188.82 | API de referral |
-
-## Inferred Edges
-| id | confidence | from | to |
-|---|---|---|---|
-| c006 | high | API de referral | Criação customer no FP |
-```
-
-## Limitations
-
-- Curved or complex connector paths may not infer perfectly.
-- Arrow direction should be visually checked.
-- Repeated labels need position/lane context.
-- Raster images inside SVG can hide text from extraction.
-- Frame titles, comments, and some Miro metadata may not be present in the SVG export.
-
-## Why SVG
-
-SVG is XML for vector graphics. When Miro exports real `<text>` and `<path>` elements, agents can inspect labels and geometry directly instead of relying on OCR or incomplete board summaries.
+That is intentional. The goal is not fake certainty. The goal is a careful, reusable brief that makes the next agent safer and faster.
 
 ## License
 
