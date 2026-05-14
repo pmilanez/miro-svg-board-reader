@@ -27,8 +27,10 @@ rg -n "<text|<path|<image|JOURNEY|STATUS|API|CTA|HANDOFF" "board.svg"
 2. Run the extraction helper:
 
 ```bash
-python3 ~/.codex/skills/miro-svg-board-reading/scripts/extract_miro_svg.py "board.svg" --format markdown
+python3 scripts/extract_miro_svg.py "board.svg" --format markdown
 ```
+
+When this skill is installed with the Skills CLI, resolve `scripts/extract_miro_svg.py` relative to this `SKILL.md` directory.
 
 3. Cross-check visually with the JPG/SVG image:
 
